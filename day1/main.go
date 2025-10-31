@@ -52,14 +52,14 @@ func part1() {
 func part2() {
 	arr1, arr2 := scanLists()
 
-	arr2NumsDesnity := make(map[int]int)
+	arr2NumsDensity := make(map[int]int)
 	for _, elm := range arr2 {
-		arr2NumsDesnity[elm]++
+		arr2NumsDensity[elm]++
 	}
 
 	sim := 0
 	for _, elm := range arr1 {
-		sim += arr2NumsDesnity[elm] * elm
+		sim += arr2NumsDensity[elm] * elm
 	}
 
 	fmt.Println(sim)
