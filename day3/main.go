@@ -10,13 +10,9 @@ import (
 	"strings"
 )
 
-const (
-	do   = "do()"
-	dont = "don't()"
-)
-
 func parseMul(s string) (int, int) {
-	s = s[4:12]
+	l := min(len(s), 12)
+	s = s[4:l]
 
 	semiIndex := strings.Index(s, ",")
 	if semiIndex == -1 || semiIndex > 3 {
@@ -38,7 +34,7 @@ func parseMul(s string) (int, int) {
 		return 0, 4
 	}
 
-	return firstOp * secondOp, bracketIndex
+	return firstOp * secondOp, bracketIndex + 4
 
 }
 
@@ -97,17 +93,21 @@ func part2() {
 
 	res := 0
 	mult := true
+	multN := 0
+	NoMultN := 0
 	for sc.Scan() {
 		line := sc.Text()
 		matches := r.FindAllStringSubmatch(line, -1)
 		for _, m := range matches {
 			if m[0] == "do" {
+				multN++
 				mult = true
 				continue
 			}
 
 			if m[0] == "don't" {
 				mult = false
+				NoMultN++
 				continue
 
 			}
@@ -130,6 +130,17 @@ func part2WithoutRegex() {
 	mul := 0
 	doMul := true
 	sc := bufio.NewScanner(os.Stdin)
+
+	doInc := func(str *string, cmd *bool, i int) {
+		*cmd = true
+		*str = (*str)[i+len("do()"):]
+	}
+
+	dontInc := func(str *string, cmd *bool, i int) {
+		*cmd = false
+		*str = (*str)[i+len("don't()"):]
+	}
+
 	for sc.Scan() {
 		line := sc.Text()
 
@@ -142,24 +153,33 @@ func part2WithoutRegex() {
 				break
 			}
 
+			if i < min(doIndex, dontIndex) {
+				parsed, inc := parseMul(str[i:])
+				if doMul {
+					mul += parsed
+				}
+				str = str[i+inc:]
+			}
+
+			if doIndex != -1 && dontIndex != -1 {
+				if doIndex < dontIndex {
+					doInc(&str, &doMul, doIndex)
+				} else {
+					dontInc(&str, &doMul, dontIndex)
+				}
+				continue
+			}
+
 			if dontIndex != -1 {
-				doMul = false
-				str = str[dontIndex+len("don't()"):]
+				dontInc(&str, &doMul, dontIndex)
 				continue
 			}
 
 			if doIndex != -1 {
-				doMul = true
-				str = str[doIndex+len("do()"):]
+				doInc(&str, &doMul, doIndex)
 				continue
 			}
 
-			parsed, inc := parseMul(str[i:])
-			fmt.Println(str[i : i+inc+1])
-			if doMul {
-				mul += parsed
-			}
-			str = str[i+inc:]
 		}
 	}
 
@@ -180,11 +200,13 @@ func main() {
 		part1WithoutRegex()
 	case 2:
 		if *regex {
-			part2WithoutRegex()
+			part2()
 			return
 		}
-		part2()
+		part2WithoutRegex()
+
+	default:
+		flag.PrintDefaults()
 	}
 
-	flag.PrintDefaults()
 }
